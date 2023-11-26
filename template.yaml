@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  customgptmodel-lambda
+
+  Sample SAM Template for customgptmodel-lambda
+
+Globals:
+  Function:
+    Timeout: 180
+    MemorySize: 128
+
+Resources:
+  # ---------------FUNCTIONS---------------
+  chatbotLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      AutoPublishAlias: live
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - S3FullAccessPolicy:
+            BucketName: hudi-poc11
+        - DynamoDBCrudPolicy:
+            TableName: conversation-history-store
+
+      Architectures:
+        - x86_64
+      Layers:
+        - !Ref LangLayer
+
+  # ---------------LAYERS---------------
+  LangLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: lambda/layer/langlayer/
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
+
+Outputs:
+  chatbotLambda:
+    Description: "Custom Chatbot Lambda Function ARN"
+    Value: !GetAtt chatbotLambda.Arn
